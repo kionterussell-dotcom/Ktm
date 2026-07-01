@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="KTM Commands">
+<title>KTM — What to Say</title>
+<style>
+  :root{
+    --ink:#16202B; --sub:#5A6675; --line:#E3E7EC; --bg:#F6F7F9; --card:#fff;
+    --cap:#1F6FB2; --notes:#2F9E6B; --day:#D98A2B; --link:#7A4FC4; --warn:#C0453B;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    line-height:1.45; padding:0 0 40px;}
+  header{background:var(--ink); color:#fff; padding:20px 18px 16px; position:sticky; top:0; z-index:2;}
+  header .k{font-size:11px; letter-spacing:2px; color:#8FA0B3; font-weight:700; text-transform:uppercase;}
+  header h1{margin:2px 0 2px; font-size:20px; font-weight:800;}
+  header p{margin:0; font-size:12.5px; color:#9DAEC0;}
+  .wrap{max-width:640px; margin:0 auto; padding:14px;}
+  .sec{background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:14px 14px 6px; margin-bottom:14px; box-shadow:0 1px 2px rgba(20,32,43,.03);}
+  .sec h2{margin:0 0 4px; font-size:15px; font-weight:800; display:flex; align-items:center; gap:8px;}
+  .tag{width:9px; height:9px; border-radius:9px; display:inline-block;}
+  .sec .desc{font-size:12px; color:var(--sub); margin:0 0 10px;}
+  .row{padding:9px 0; border-top:1px solid var(--bg);}
+  .row:first-of-type{border-top:none;}
+  .say{font-size:14.5px; font-weight:600;}
+  .say b{color:var(--cap);}
+  .does{font-size:12px; color:var(--sub); margin-top:1px;}
+  .cap .say b{color:var(--cap);} .notes .say b{color:var(--notes);} .day .say b{color:var(--day);}
+  .connect .say b{color:var(--link);}
+  .pill{display:inline-block; font-size:10.5px; font-weight:700; color:#fff; padding:2px 8px;
+    border-radius:20px; margin-left:6px; vertical-align:middle;}
+  .tip{background:#FBF7EE; border:1px solid #EAD9B8; border-radius:12px; padding:12px 14px;
+    font-size:13px; margin-bottom:14px;}
+  .tip b{color:#8A5616;}
+  .morning{background:var(--ink); color:#E8EDF2; border-radius:14px; padding:14px 16px; margin-bottom:14px;}
+  .morning h2{margin:0 0 8px; font-size:15px; color:#fff;}
+  .morning code{display:block; background:#0E1621; color:#7FD4A8; padding:8px 12px; border-radius:8px;
+    font-size:14px; margin:4px 0; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+  .morning p{font-size:12px; color:#9DAEC0; margin:8px 0 0;}
+  footer{text-align:center; font-size:11px; color:var(--sub); margin-top:6px;}
+  .warnbox{font-size:12px;color:var(--warn);font-weight:600;margin-top:6px;}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">KTM Systems</div>
+  <h1>What to Say</h1>
+  <p>Talk normally in the Claude app. These are your reliable triggers.</p>
+</header>
+
+<div class="wrap">
+
+  <div class="morning">
+    <h2>☀️ Start of day (at your Mac)</h2>
+    <code>cd ~</code>
+    <code>claude</code>
+    <p>Two lines in Terminal. Auto-remote is on, so it's phone-ready instantly. Leave the window open and the Mac awake — that keeps your phone connected all day.</p>
+  </div>
+
+  <div class="tip">
+    <b>One rule for success:</b> with referrals, give <b>name + address/zip + agency</b> in one shot — <i>"John Doe, 75216, Coker."</i> That lets it check rate, day-rule, and open room all at once. Vague gets follow-up questions; specific gets an instant answer.
+  </div>
+
+  <!-- CAPACITY -->
+  <div class="sec cap">
+    <h2><span class="tag" style="background:var(--cap)"></span>Capacity &amp; Schedule</h2>
+    <p class="desc">The referral + calendar brain you built.</p>
+    <div class="row"><div class="say"><b>"Maggie Anderson, 75241, JTS — take it?"</b></div><div class="does">Should I accept this referral</div></div>
+    <div class="row"><div class="say"><b>"Book it"</b> / "Book [name], [address], [agency]"</div><div class="does">Puts the visit on your calendar</div></div>
+    <div class="row"><div class="say"><b>"How's my week look?"</b></div><div class="does">Every day — how full, by area and dollars</div></div>
+    <div class="row"><div class="say"><b>"What's on Tuesday?"</b> / "What's on 7/8?"</div><div class="does">One day's visits, grouped by area</div></div>
+    <div class="row"><div class="say"><b>"Where do I have room this week?"</b></div><div class="does">Open capacity per day</div></div>
+    <div class="row"><div class="say"><b>"Anything on the wrong day?"</b></div><div class="does">Flags visits breaking your zip day-rules</div></div>
+    <div class="row"><div class="say"><b>"Plot next week"</b></div><div class="does">Pull + drop next week's visits on the calendar</div></div>
+    <div class="row"><div class="say"><b>"Re-verify next week"</b></div><div class="does">Sunday pass: add new, flag dropped</div></div>
+    <div class="row"><div class="say"><b>"Add a rule: [zip] should be [days]"</b></div><div class="does">Change a day-rule</div></div>
+    <div class="row"><div class="say"><b>"What does HCN pay?"</b> / "What are my rates?"</div><div class="does">Rate lookup</div></div>
+  </div>
+
+  <!-- NOTES -->
+  <div class="sec notes">
+    <h2><span class="tag" style="background:var(--notes)"></span>KTM Notes</h2>
+    <p class="desc">Voice memos → clinical documentation.</p>
+    <div class="row"><div class="say"><b>"Process the notes in my inbox"</b></div><div class="does">Runs the whole notes workflow</div></div>
+    <div class="row"><div class="say"><b>"There are notes in the inbox"</b></div><div class="does">Same — triggers it</div></div>
+    <div class="row"><div class="say"><b>"Enter [patient]'s note into Kinnser"</b></div><div class="does">Single note into the EHR</div></div>
+    <div class="row"><div class="say"><b>"What's in my inbox?"</b></div><div class="does">See what's waiting</div></div>
+    <div class="row"><div class="say">Drop an <b>.m4a file + patient name</b></div><div class="does">It picks it up automatically</div></div>
+  </div>
+
+  <!-- KTM DAY -->
+  <div class="sec day">
+    <h2><span class="tag" style="background:var(--day)"></span>KTM Day (Sweep &amp; Route)</h2>
+    <p class="desc">Pulls visits from Kinnser, builds the route.</p>
+    <div class="row"><div class="say"><b>"Run the sweep for tomorrow"</b> / "...for 7/8"</div><div class="does">Pull that day's visits from Kinnser</div></div>
+    <div class="row"><div class="say"><b>"Run the sweep for next week"</b></div><div class="does">Whole week</div></div>
+    <div class="row"><div class="say"><b>"Build my route for tomorrow"</b></div><div class="does">Sequence the day</div></div>
+    <div class="row"><div class="say"><b>"Did the sweep pull everything?"</b></div><div class="does">Check coverage — flags login errors</div></div>
+  </div>
+
+  <!-- CONNECTORS -->
+  <div class="sec connect">
+    <h2><span class="tag" style="background:var(--link)"></span>Connect the Systems</h2>
+    <p class="desc">One phrase, two systems working together.</p>
+    <div class="row"><div class="say"><b>"Sweep tomorrow and plot it"</b></div><div class="does">Day pulls → capacity plots to your calendar</div></div>
+    <div class="row"><div class="say"><b>"Plot next week then check for outliers"</b></div><div class="does">Plot + flag misplaced visits</div></div>
+  </div>
+
+  <!-- TROUBLESHOOT -->
+  <div class="sec">
+    <h2><span class="tag" style="background:var(--warn)"></span>Keeps You Out of Trouble</h2>
+    <div class="row"><div class="say">"Which copy of the ktm-capacity skill is running?"</div><div class="does">If anything seems off</div></div>
+    <div class="row"><div class="say">"Is remote control on?"</div><div class="does">Confirm the phone connection</div></div>
+    <div class="row"><div class="say">"Add the HCN login to my sweep"</div><div class="does">When you get that login from the car</div></div>
+    <div class="warnbox">If the phone stops responding: your Mac likely slept. Go to the Mac, run <b>claude</b>, and you're live again.</div>
+  </div>
+
+  <footer>KTM operating system · say it, don't type it</footer>
+</div>
+</body>
+</html>
