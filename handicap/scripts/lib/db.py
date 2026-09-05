@@ -14,7 +14,9 @@ from pathlib import Path
 from typing import Any, Iterable
 
 ROOT = Path(__file__).resolve().parents[2]
-DB_PATH = ROOT / "data" / "desk.db"
+# DESK_DB lets a UI check or a test run against a throwaway file so desk.db only
+# ever holds rows that came from a real fetch.
+DB_PATH = Path(os.environ.get("DESK_DB") or ROOT / "data" / "desk.db")
 
 SCHEMA = """
 PRAGMA journal_mode=WAL;

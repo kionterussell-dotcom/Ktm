@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Handicapping Desk</title>
+<link rel="stylesheet" href="/static/style.css">
+</head><body>
+
+<header>
+  <div class="topbar">
+    <div class="brand"><b>◆ HANDICAPPING</b> <span>DESK</span></div>
+    <div class="toggle">
+      <button id="t-nfl" class="on" onclick="setSport('nfl')">NFL</button>
+      <button id="t-cfb" onclick="setSport('cfb')">CFB</button>
+    </div>
+    <input type="date" id="date">
+    <button class="scan" id="scanBtn" onclick="scan()">Scan</button>
+    <div class="clock" id="clock"></div>
+  </div>
+  <div class="strip" id="strip"></div>
+  <div id="banner"></div>
+</header>
+
+<main>
+  <section>
+    <h2 class="sec-title">Slate — kickoff order</h2>
+    <div id="games"></div>
+    <div id="scanout"></div>
+  </section>
+
+  <aside>
+    <div class="card">
+      <h2 class="sec-title">Top 5 bets</h2>
+      <div id="bets"></div>
+    </div>
+    <div class="card">
+      <h2 class="sec-title">Top 5 props</h2>
+      <div id="props"></div>
+    </div>
+    <div class="card">
+      <h2 class="sec-title">Resources</h2>
+      <div id="resources"></div>
+    </div>
+  </aside>
+</main>
+
+<script src="/static/app.js"></script>
+</body></html>
