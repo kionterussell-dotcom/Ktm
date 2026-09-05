@@ -33,13 +33,15 @@ SOURCES: list[Source] = [
     Source("consensus", "fetch_consensus", "splits", True, False,
            "ScoresAndOdds / Covers / SportsBettingDime aggregates. UNCALIBRATED. Cross-verification "
            "only, never reported as a per-book split."),
-    Source("lines", None, "lines", False, False,
-           "Current numbers, openers and line history across books, with BetOnline as the "
-           "origination reference for direction of travel."),
-    Source("injuries", None, "context", False, False,
-           "Current injury report with practice participation. CFB reporting is unreliable by nature."),
-    Source("efficiency", None, "context", False, False,
-           "EPA/play, success rate, pace, pressure. CFB adds SP+/FEI/returning production."),
+    Source("lines", "fetch_lines", "lines", True, False,
+           "The Odds API — numbers, openers and history across books. Needs ODDS_API_KEY. "
+           "Originator moves (Pinnacle/BetOnline/Circa) propagating to DK/FD are sharp-driven."),
+    Source("injuries", "fetch_injuries", "context", True, False,
+           "ESPN injury report. Point value is judged in analysis, never tabled as a fixed "
+           "number. CFB reporting is voluntary — absence of news is not information."),
+    Source("efficiency", "fetch_efficiency", "context", True, True,
+           "nflverse play-by-play: opponent-adjusted EPA/play, success rate, explosive rate, "
+           "early-down pass rate, neutral pace. NFL only — no free CFB equivalent with modelled EPA."),
     Source("pikkit", None, "splits", False, False,
            "App/Pro only, no public feed. Tracked-bettor action, NOT book handle — a different data "
            "class that must never be blended into a book split. Paste-in only."),

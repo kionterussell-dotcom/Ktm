@@ -4,6 +4,10 @@ data/desk.db-*
 data/raw/*
 data/cache/*
 
+# Downloaded play-by-play (60MB+ per season, re-fetchable from nflverse releases).
+data/nflverse/*
+!data/nflverse/.gitkeep
+
 # Pasted content from gated sources (screenshots, X posts, Pikkit, Action PRO).
 manual/*
 

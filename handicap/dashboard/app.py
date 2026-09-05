@@ -22,6 +22,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from lib import db                                            # noqa: E402
 from lib.registry import SOURCES                              # noqa: E402
+from lib import model as M                                     # noqa: E402
 from lib.picks import Candidate, rank                          # noqa: E402
 from lib.signals import GameSplits, evaluate_market, verification_state  # noqa: E402
 
@@ -49,6 +50,23 @@ RESOURCES_NFL = [
     {"name": "@johnewing",         "url": "https://x.com/johnewing",        "tag": "liability · paste"},
     {"name": "@PatrickE_Vegas",    "url": "https://x.com/PatrickE_Vegas",   "tag": "liability · paste"},
 ]
+
+
+CALIBRATION_PATH = ROOT / "data" / "model_calibration.json"
+
+
+def calibration():
+    return M.load_calibration(CALIBRATION_PATH)
+
+
+def team_efficiency(con, sport: str) -> dict:
+    """Latest efficiency snapshot per team."""
+    rows = con.execute(
+        """SELECT e.* FROM efficiency e
+           JOIN (SELECT team, MAX(fetched_at) mx FROM efficiency WHERE sport=? GROUP BY team) m
+             ON e.team=m.team AND e.fetched_at=m.mx
+           WHERE e.sport=?""", (sport, sport)).fetchall()
+    return {r["team"]: dict(r) for r in rows}
 
 
 def _con():
@@ -150,7 +168,37 @@ def build_game(con, g: dict) -> dict:
         "SELECT source_account, posted_at, book, note FROM manual WHERE game_id=? "
         "ORDER BY pasted_at DESC LIMIT 5", (g["game_id"],))]
 
-    return {**g, "grid": grid, "signals": signals, "markets": markets_meta,
+    eff = team_efficiency(con, g["sport"])
+    eh, ea = eff.get(g["home"]), eff.get(g["away"])
+    matchup, anomaly = None, None
+    if eh and ea:
+        matchup = {
+            "home_net": eh.get("net_epa"), "away_net": ea.get("net_epa"),
+            "home_off": eh.get("adj_off_epa"), "away_off": ea.get("adj_off_epa"),
+            "home_def": eh.get("adj_def_epa"), "away_def": ea.get("adj_def_epa"),
+            "home_pace": eh.get("sec_per_play"), "away_pace": ea.get("sec_per_play"),
+            "home_sr": eh.get("off_sr"), "away_sr": ea.get("off_sr"),
+            "season": eh.get("season"), "through_week": eh.get("through_week"),
+        }
+        cal = calibration()
+        spread = markets_meta.get("spread", {}).get("current")
+        if cal and spread is not None:
+            proj = M.project_margin(eh.get("net_epa") or 0, ea.get("net_epa") or 0, cal.fit)
+            is_anom, gap = M.line_anomaly(proj, spread)
+            matchup["projected_margin"] = round(proj, 1)
+            if is_anom:
+                anomaly = {"gap": gap, "projected": round(proj, 1), "market": spread}
+                signals.insert(0, {
+                    "label": "LINE ANOMALY", "side": g["home"] if gap > 0 else g["away"],
+                    "market": "spread", "strength": 3, "book": "", "books": [],
+                    "detail": (f"Model projects {g['home']} {proj:+.1f}, market has {spread:+.1f} — "
+                               f"a {abs(gap):.1f} pt gap with no visible cause. Investigate before "
+                               f"betting: an unexplained line usually means the market knows "
+                               f"something the box score does not."),
+                })
+
+    return {**g, "matchup": matchup, "anomaly": anomaly,
+            "grid": grid, "signals": signals, "markets": markets_meta,
             "verification": state, "verification_why": why, "manual_notes": notes,
             "has_any_splits": bool(splits)}
 
@@ -217,6 +265,20 @@ def api_status_payload(con, sport: str) -> dict:
     }
 
 
+@app.get("/api/model")
+def api_model():
+    cal = calibration()
+    if cal is None:
+        return jsonify({"validated": False, "verdict": "No backtest has been run. "
+                        "Run scripts/backtest.py before the model is used for anything."})
+    d = cal.to_dict()
+    d["gate"] = ("Model probabilities are NOT used to price bets: it did not beat the closing "
+                 "line out of sample. It is used for LINE ANOMALY flags and matchup context only."
+                 ) if not cal.validated else (
+                 "Model cleared the break-even bar out of sample and is used to price bets.")
+    return jsonify(d)
+
+
 @app.get("/api/status")
 def api_status():
     return jsonify(api_status_payload(_con(), request.args.get("sport", "nfl")))
@@ -278,10 +340,12 @@ def api_picks():
         "flags": flags[:5],
         "summary": summary,
         "bets_blocked": ("" if picked else
-                         "The ranking engine ran and priced nothing: no candidate carries a win "
-                         "probability, because the efficiency layer is not built. A market signal "
-                         "is not a play until it is priced against a model. Flags below are the "
-                         "board's strongest signals, in signal order — not ranked bets."),
+                         "The ranking engine ran and priced nothing. The efficiency layer IS built "
+                         "and produces a projection, but the model failed its own backtest: 51.8% "
+                         "ATS against 2024 closing spreads, under the 52.4% break-even, and the "
+                         "closing line predicted final margin better than it did. Quoting win "
+                         "probabilities from it would be inventing precision. Flags below are the "
+                         "board's strongest market signals, in signal order — not ranked bets."),
         "props": [],
         "props_blocked": "no props feed built yet; handicapper sourcing not wired in.",
         "odds_floor": -160,

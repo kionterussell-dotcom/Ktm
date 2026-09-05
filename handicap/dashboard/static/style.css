@@ -143,3 +143,12 @@ pre.out{background:#08090b;border:1px solid var(--line);border-radius:8px;paddin
 .pick .rej{font-size:11px;color:var(--ink-faint);margin-top:3px;font-style:italic}
 .hdr{font:700 10px/1.6 var(--mono);letter-spacing:.09em;color:var(--ink-faint);
   border-bottom:1px solid var(--line);padding-bottom:7px;margin-bottom:4px}
+.mu{border-top:1px solid var(--line);background:#0d1014;padding:9px 12px}
+.mu-row{display:grid;grid-template-columns:1fr 110px 110px;gap:6px;font-size:11.5px;
+  padding:3px 0;align-items:baseline}
+.mu-row span{color:var(--ink-faint);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase}
+.mu-row b{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);text-align:right;font-weight:600}
+.mu-row b.up{color:var(--green)}
+.mu-src{font:10px/1.4 var(--mono);color:var(--ink-faint);margin-top:5px;opacity:.7}
+.mfit{margin-top:8px;font-size:10.5px;color:var(--ink-faint);border-top:1px solid var(--line);
+  padding-top:7px}

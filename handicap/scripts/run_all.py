@@ -45,6 +45,8 @@ def run_source(con, src, sport: str, date: str | None, ttl_s: int) -> Result:
     kwargs = {"ttl_s": ttl_s}
     if src.module == "fetch_schedule":
         kwargs["date"] = date
+    if src.module == "fetch_efficiency":
+        kwargs.pop("ttl_s", None)
     try:
         return mod.run(con, sport, **kwargs)
     except Exception as e:                       # a fetcher crash is a FAILED row, not a dead scan

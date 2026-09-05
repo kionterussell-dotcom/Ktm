@@ -26,32 +26,57 @@ independent split sources return, it says so and the board stays UNVERIFIED.
 
 ## State of the build
 
+**Verified against real data** (ran end to end here):
+
 | Layer | Status |
 |---|---|
 | `data/desk.db` schema + provenance enforcement | done |
 | rate-limited cached HTTP, raw-pull writer, fail-loud parse contract | done |
-| signal detection (all CLAUDE.md labels) | done, unit-tested |
-| odds / no-vig / edge / CLV math (`lib/odds.py`) | done, unit-tested |
-| pick ranking, -160 floor, quarter-Kelly sizing (`lib/picks.py`) | done, unit-tested |
-| play logging + CLV grading (`scripts/grade.py`) | done, tested end to end |
-| paste ingestion for gated sources (`scripts/paste.py`) | done, tested |
-| dashboard (slate, compiled splits, signals, picks, resources) | done |
-| `fetch_schedule.py` (ESPN JSON → slate, kickoff order, venue) | written, unrun |
-| `fetch_context.py` (Open-Meteo weather, wind ≥15mph flag) | written, unrun |
-| `fetch_vsin.py` (DraftKings + Circa splits) | written, **uncalibrated** |
-| `fetch_action.py`, `fetch_consensus.py` | written, **uncalibrated** |
-| `fetch_lines.py` (openers, history, direction of travel) | not built |
-| injuries, efficiency/EPA, SP+/FEI | not built |
-| props feed + handicapper sourcing | not built |
+| signal detection, all CLAUDE.md labels + LINE ANOMALY | done, unit-tested |
+| odds / no-vig / edge / CLV math | done, unit-tested |
+| pick ranking, -160 floor, quarter-Kelly sizing | done, unit-tested |
+| play logging + CLV grading | done, tested end to end |
+| paste ingestion for gated sources | done, tested |
+| handicapper tracking (`scripts/tout.py`) | done, tested |
+| **efficiency layer** (`fetch_efficiency.py`, nflverse) | **done, run against real 2023–2025 play-by-play** |
+| **model + walk-forward backtest** | **done — and it FAILED its own test, see below** |
+| dashboard | done |
 
-"Written, unrun" means exactly that: the code exists and compiles, and it has
-never seen a live response, because the environment it was written in had no
-network route to any sportsbook or data provider. No scraper here has been
-proven against a real page.
+**Written but never run against a live response** (no network route in the build
+environment): `fetch_schedule.py`, `fetch_context.py` (weather),
+`fetch_vsin.py`, `fetch_action.py`, `fetch_consensus.py`, `fetch_lines.py`
+(needs `ODDS_API_KEY`), `fetch_injuries.py`. The scrapers among these are
+**uncalibrated** — run them with `--calibrate` first.
 
-The two things that block ranked picks are the **efficiency layer** (no win
-probability means no edge, so `lib/picks` returns flags rather than bets) and a
-**props feed**. Everything downstream of them is built and tested.
+**Not built:** player props (needs a props feed — `fetch_lines.py --props` has
+the market list but is unrun), CFB efficiency (no free play-by-play release with
+modelled EPA; needs a collegefootballdata.com key).
+
+## The model failed its backtest, and that is load-bearing
+
+`scripts/backtest.py` runs walk-forward on real data — ratings for week W use
+only plays before week W, and the points-per-EPA scale is fit on a prior season.
+Against 2024 closing spreads:
+
+```
+Every-game ATS: 113-105 (51.8%)     break-even at -110 is 52.4%
+model projection error   MAE 10.13
+closing spread error     MAE  9.43   <- the market is better than the model
+edge >= 4 pts: 74-70 (51.4%), -1.9% ROI
+```
+
+No shrinkage weight toward the market recovered an edge. The probabilities were
+also badly overconfident: at a stated 71.6% the model hit 54.2%.
+
+So `lib/model.py` has a **validation gate**. Because the backtest failed, the
+model is not allowed to price bets — the picks panel says so instead of quoting
+numbers it has not earned. The model is used for two things it is good enough
+for: **LINE ANOMALY** flags (your evenly-matched-teams-at-+8 idea, made numeric)
+and matchup context. A better model has to clear the same bar to get promoted.
+
+This is also the argument for the desk's whole design: the closing line is
+efficient, so the edge is in finding where public money distorts a number, not
+in out-modelling the market.
 
 ## First thing to do on a networked machine
 

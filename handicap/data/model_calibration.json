@@ -1,0 +1,14 @@
+{
+  "slope": 48.38113601990844,
+  "hfa": 2.733137285686174,
+  "train_resid_sd": 12.222057623870827,
+  "n_train_games": 285,
+  "tested_season": 2024,
+  "ats_win_rate": 0.518348623853211,
+  "n_graded": 218,
+  "model_mae": 10.133327128143259,
+  "market_mae": 9.427601809954751,
+  "honest_resid_sd": 12.811737923899146,
+  "validated": false,
+  "verdict": "does NOT beat break-even: 51.8% ATS over 218 graded games in 2024 (need >52.4%). Projection MAE 10.13 vs closing line 9.43."
+}

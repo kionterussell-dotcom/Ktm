@@ -116,6 +116,56 @@ CREATE TABLE IF NOT EXISTS results (
 );
 CREATE INDEX IF NOT EXISTS idx_results_play ON results(play_id);
 
+-- Team efficiency, one row per team per (season, through_week) snapshot, so a
+-- rating can always be recomputed as it stood before a given week.
+CREATE TABLE IF NOT EXISTS efficiency (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    fetched_at    TEXT NOT NULL,
+    source        TEXT NOT NULL,
+    sport         TEXT NOT NULL,
+    season        INTEGER NOT NULL,
+    through_week  INTEGER,
+    team          TEXT NOT NULL,
+    adj_off_epa   REAL, adj_def_epa REAL, net_epa REAL,
+    off_sr        REAL, def_sr REAL,
+    off_explosive REAL, def_explosive REAL,
+    off_pass_epa  REAL, off_rush_epa REAL,
+    early_down_pass_rate REAL, sec_per_play REAL,
+    off_plays     INTEGER, def_plays INTEGER
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_eff_key
+    ON efficiency(sport, season, through_week, team);
+
+-- Handicappers the desk tracks. Claimed records are not stored as facts; only
+-- graded picks with CLV are, so a tout is judged on what it did here.
+CREATE TABLE IF NOT EXISTS handicappers (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    added_at    TEXT NOT NULL,
+    handle      TEXT NOT NULL UNIQUE,
+    platform    TEXT,
+    focus       TEXT,
+    claimed_record TEXT,
+    note        TEXT
+);
+CREATE TABLE IF NOT EXISTS handicapper_picks (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    logged_at     TEXT NOT NULL,
+    handicapper_id INTEGER NOT NULL REFERENCES handicappers(id),
+    posted_at     TEXT,
+    game_id       TEXT,
+    market        TEXT,
+    side          TEXT NOT NULL,
+    number        REAL,
+    price         INTEGER,
+    book          TEXT,
+    result        TEXT CHECK (result IN ('win','loss','push','void')),
+    closing_number REAL,
+    closing_price  INTEGER,
+    clv           REAL,
+    source_note   TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_hpicks ON handicapper_picks(handicapper_id, posted_at);
+
 -- Per-run provenance for the status table the orchestrator prints.
 CREATE TABLE IF NOT EXISTS fetch_log (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,

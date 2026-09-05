@@ -51,6 +51,19 @@ function gameCard(g){
         <span class="txt">${esc(s.detail)}</span></div>`).join('')
     : `<div class="nosig">NO SIGNAL${g.has_any_splits ? '' : ' — no split data for this game'}</div>`;
 
+  const mu = g.matchup ? `<div class="mu">
+      <div class="mu-row"><span>net EPA/play</span>
+        <b class="${g.matchup.away_net > g.matchup.home_net ? 'up' : ''}">${esc(g.away)} ${(g.matchup.away_net ?? 0).toFixed(3)}</b>
+        <b class="${g.matchup.home_net >= g.matchup.away_net ? 'up' : ''}">${esc(g.home)} ${(g.matchup.home_net ?? 0).toFixed(3)}</b></div>
+      <div class="mu-row"><span>neutral pace s/play</span>
+        <b>${(g.matchup.away_pace ?? 0).toFixed(1)}</b><b>${(g.matchup.home_pace ?? 0).toFixed(1)}</b></div>
+      <div class="mu-row"><span>success rate</span>
+        <b>${((g.matchup.away_sr ?? 0)*100).toFixed(1)}%</b><b>${((g.matchup.home_sr ?? 0)*100).toFixed(1)}%</b></div>
+      ${g.matchup.projected_margin != null ? `<div class="mu-row"><span>model margin (${esc(g.home)}) — context only</span>
+        <b></b><b>${g.matchup.projected_margin > 0 ? '+' : ''}${g.matchup.projected_margin}</b></div>` : ''}
+      <div class="mu-src">nflverse ${g.matchup.season}${g.matchup.through_week ? ' thru wk '+g.matchup.through_week : ' full season'} · opponent-adjusted</div>
+    </div>` : '';
+
   const notes = g.manual_notes.map(n => `<div class="sig s3">
       <span class="lab">${esc(n.source_account)}</span>
       <span class="txt">${esc(n.note)}</span></div>`).join('');
@@ -68,7 +81,7 @@ function gameCard(g){
     </table>
     <div class="legend"><b>gold = ticket %</b> &nbsp;·&nbsp; <i>blue = handle %</i>
       &nbsp;·&nbsp; per-book splits, never averaged across books</div>
-    <div class="signals">${sigs}${notes}</div>
+    ${mu}<div class="signals">${sigs}${notes}</div>
   </article>`;
 }
 
@@ -78,7 +91,8 @@ function statusStrip(st){
               : s.status === 'EMPTY' ? 'empty' : 'notbuilt';
     const age = s.age == null ? '' : `<span class="age">${s.age}m</span>`;
     const cal = (s.built && !s.calibrated) ? ' ⚠' : '';
-    return `<span class="chip ${cls}" title="${esc(s.detail || '')}">
+    const tip = (s.detail || '').slice(0, 110);
+    return `<span class="chip ${cls}" title="${esc(tip)}">
       <span class="dot"></span>${esc(s.key)}${cal} ${age}</span>`;
   }).join('');
 
@@ -128,6 +142,13 @@ async function load(){
     `<div class="res"><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.name)}</a>
      <span class="tag">${esc(x.tag)}</span></div>`).join('');
   picks(await fetch(`/api/picks?sport=${SPORT}`).then(r => r.json()));
+  const m = await fetch('/api/model').then(r => r.json());
+  $('model').innerHTML = `<div class="blocked">
+      <b>${m.validated ? 'VALIDATED' : 'NOT VALIDATED'}</b>${esc(m.verdict || '')}
+      ${m.gate ? `<br><br>${esc(m.gate)}` : ''}
+      ${m.slope != null ? `<div class="mfit num">slope ${m.slope.toFixed(1)} pts/EPA ·
+        HFA ${m.hfa >= 0 ? '+' : ''}${m.hfa.toFixed(2)} · resid SD ${(m.honest_resid_sd ?? m.train_resid_sd).toFixed(2)}</div>` : ''}
+    </div>`;
 }
 
 async function scan(){
