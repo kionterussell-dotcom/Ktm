@@ -8,3 +8,8 @@ data/cache/*
 manual/*
 
 !.gitkeep
+
+# Python
+.venv/
+__pycache__/
+*.pyc

@@ -1,0 +1,7 @@
+# Handicapping desk — data layer
+requests>=2.32
+beautifulsoup4>=4.12
+lxml>=5.2
+pandas>=2.2
+playwright>=1.45
+flask>=3.0
