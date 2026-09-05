@@ -135,3 +135,11 @@ pre.out{background:#08090b;border:1px solid var(--line);border-radius:8px;paddin
 .sig .mkt{font:700 9px/1.5 var(--mono);letter-spacing:.1em;text-transform:uppercase;
   color:var(--ink-faint);border:1px solid var(--line);border-radius:3px;padding:1px 5px;
   white-space:nowrap;align-self:flex-start}
+.pick .tier{font:700 9px/1 var(--mono);letter-spacing:.09em;color:#12200f;background:var(--green);
+  border-radius:3px;padding:2px 5px;margin-left:7px;vertical-align:middle}
+.pick .tier.no{background:transparent;color:var(--ink-faint);border:1px solid var(--line)}
+.pick .line{font-size:11.5px;color:var(--ink-dim);margin-top:3px}
+.pick .thr{font-size:11px;color:var(--gold);margin-top:2px}
+.pick .rej{font-size:11px;color:var(--ink-faint);margin-top:3px;font-style:italic}
+.hdr{font:700 10px/1.6 var(--mono);letter-spacing:.09em;color:var(--ink-faint);
+  border-bottom:1px solid var(--line);padding-bottom:7px;margin-bottom:4px}

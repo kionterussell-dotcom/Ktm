@@ -22,6 +22,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from lib import db                                            # noqa: E402
 from lib.registry import SOURCES                              # noqa: E402
+from lib.picks import Candidate, rank                          # noqa: E402
 from lib.signals import GameSplits, evaluate_market, verification_state  # noqa: E402
 
 app = Flask(__name__)
@@ -33,7 +34,7 @@ BOOK_ORDER = ["DraftKings", "Circa", "Action Network", "Consensus",
               "BetMGM", "FanDuel", "Pikkit", "BetOnline"]
 PASTE_ONLY = {"BetMGM", "FanDuel", "Pikkit"}
 
-RESOURCES = [
+RESOURCES_NFL = [
     {"name": "VSiN splits (DK)",   "url": "https://data.vsin.com/betting-splits/?view=nfl&book=draftkings", "tag": "fetched"},
     {"name": "VSiN splits (Circa)","url": "https://data.vsin.com/betting-splits/?view=nfl&book=circa",      "tag": "fetched"},
     {"name": "Action Network NFL", "url": "https://www.actionnetwork.com/nfl/public-betting",               "tag": "free tier"},
@@ -154,6 +155,12 @@ def build_game(con, g: dict) -> dict:
             "has_any_splits": bool(splits)}
 
 
+RESOURCES_CFB = [dict(r, url=r["url"].replace("/nfl", "/ncaaf").replace("view=nfl", "view=ncaaf")
+                     .replace("football/nfl", "football/ncaaf"),
+                     name=r["name"].replace("NFL", "CFB"))
+                 for r in RESOURCES_NFL]
+
+
 @app.get("/")
 def index():
     return render_template("index.html")
@@ -177,7 +184,7 @@ def api_slate():
         "sport": sport, "date": date,
         "games": [build_game(con, g) for g in games],
         "status": api_status_payload(con, sport),
-        "resources": RESOURCES,
+        "resources": RESOURCES_CFB if sport == "cfb" else RESOURCES_NFL,
         "book_order": BOOK_ORDER,
     })
 
@@ -232,27 +239,49 @@ def api_scan():
 def api_picks():
     """Top 5 bets and top 5 props.
 
-    Deliberately not faked. Ranking sides/totals needs the efficiency layer to
-    turn a market signal into an estimated win probability, and props need a
-    props feed; neither is built. Until then this reports what is missing rather
-    than filling five cards. See docs/confidence-and-picks.md.
+    Runs the real ranking engine (lib/picks). Every candidate currently arrives
+    with model_p=None because the efficiency layer that would produce a win
+    probability is not built, so the engine returns them as unpriced flags and
+    says so. The moment that layer lands these become ranked cards with an edge
+    and a price threshold — no other change needed here.
     """
     sport = request.args.get("sport", "nfl")
     con = _con()
-    flagged = []
+    cands, flags = [], []
     for g in con.execute("SELECT * FROM games WHERE sport=? ORDER BY kickoff_utc", (sport,)):
         game = build_game(con, dict(g))
-        if game["verification"] == "VERIFIED" and game["signals"]:
-            best = max(game["signals"], key=lambda s: s["strength"])
-            flagged.append({"game_id": game["game_id"], "away": game["away"],
-                            "home": game["home"], "kickoff_utc": game["kickoff_utc"],
-                            "signal": best})
-    flagged.sort(key=lambda f: -f["signal"]["strength"])
+        if game["verification"] != "VERIFIED" or not game["signals"]:
+            continue
+        best = max(game["signals"], key=lambda s: s["strength"])
+        _, cur, _ = line_bounds(con, game["game_id"], best["market"])
+        price = con.execute(
+            "SELECT price FROM lines WHERE game_id=? AND market=? AND price IS NOT NULL "
+            "ORDER BY fetched_at DESC LIMIT 1", (game["game_id"], best["market"])).fetchone()
+        cands.append(Candidate(
+            game_id=game["game_id"], away=game["away"], home=game["home"],
+            kickoff_utc=game["kickoff_utc"], market=best["market"], side=best["side"],
+            number=cur, price=price["price"] if price else -110, book=best.get("book") or "",
+            model_p=None, signals=[s["label"] for s in game["signals"]]))
+        flags.append({"game_id": game["game_id"], "away": game["away"], "home": game["home"],
+                      "kickoff_utc": game["kickoff_utc"], "signal": best,
+                      "signals": [s["label"] for s in game["signals"]]})
+
+    picked, summary = rank(cands)
+    flags.sort(key=lambda f: -f["signal"]["strength"])
     return jsonify({
-        "bets": flagged[:5],
-        "bets_blocked": ("efficiency layer not built — a market signal is not a play "
-                         "until it is priced against a model. No win probability can be "
-                         "quoted yet, so these are flags, not ranked bets."),
+        "bets": [{"game_id": p.candidate.game_id, "away": p.candidate.away,
+                  "home": p.candidate.home, "market": p.candidate.market,
+                  "side": p.candidate.side, "price": p.candidate.price,
+                  "edge": p.edge, "breakeven": p.breakeven, "units": p.units,
+                  "tier": p.tier, "threshold": p.threshold_price,
+                  "bet_worthy": p.bet_worthy, "why_not": p.why_not} for p in picked],
+        "flags": flags[:5],
+        "summary": summary,
+        "bets_blocked": ("" if picked else
+                         "The ranking engine ran and priced nothing: no candidate carries a win "
+                         "probability, because the efficiency layer is not built. A market signal "
+                         "is not a play until it is priced against a model. Flags below are the "
+                         "board's strongest signals, in signal order — not ranked bets."),
         "props": [],
         "props_blocked": "no props feed built yet; handicapper sourcing not wired in.",
         "odds_floor": -160,

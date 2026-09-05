@@ -30,31 +30,60 @@ independent split sources return, it says so and the board stays UNVERIFIED.
 |---|---|
 | `data/desk.db` schema + provenance enforcement | done |
 | rate-limited cached HTTP, raw-pull writer, fail-loud parse contract | done |
+| signal detection (all CLAUDE.md labels) | done, unit-tested |
+| odds / no-vig / edge / CLV math (`lib/odds.py`) | done, unit-tested |
+| pick ranking, -160 floor, quarter-Kelly sizing (`lib/picks.py`) | done, unit-tested |
+| play logging + CLV grading (`scripts/grade.py`) | done, tested end to end |
+| paste ingestion for gated sources (`scripts/paste.py`) | done, tested |
+| dashboard (slate, compiled splits, signals, picks, resources) | done |
 | `fetch_schedule.py` (ESPN JSON → slate, kickoff order, venue) | written, unrun |
 | `fetch_context.py` (Open-Meteo weather, wind ≥15mph flag) | written, unrun |
-| `fetch_vsin.py` (DraftKings + Circa splits) | written, **selectors uncalibrated** |
-| signal detection (all CLAUDE.md labels) | done, unit-tested |
-| dashboard (slate, compiled splits, signals, resources) | done |
-| `fetch_action.py`, `fetch_consensus.py`, `fetch_lines.py` | not built |
+| `fetch_vsin.py` (DraftKings + Circa splits) | written, **uncalibrated** |
+| `fetch_action.py`, `fetch_consensus.py` | written, **uncalibrated** |
+| `fetch_lines.py` (openers, history, direction of travel) | not built |
 | injuries, efficiency/EPA, SP+/FEI | not built |
-| top-5 bets ranking, props | not built — needs the efficiency layer |
+| props feed + handicapper sourcing | not built |
 
 "Written, unrun" means exactly that: the code exists and compiles, and it has
 never seen a live response, because the environment it was written in had no
-network route to any sportsbook or data provider. Nothing in this repo has been
+network route to any sportsbook or data provider. No scraper here has been
 proven against a real page.
+
+The two things that block ranked picks are the **efficiency layer** (no win
+probability means no edge, so `lib/picks` returns flags rather than bets) and a
+**props feed**. Everything downstream of them is built and tested.
 
 ## First thing to do on a networked machine
 
 ```bash
-python scripts/fetch_schedule.py nfl            # should print the slate in kickoff order
-python scripts/fetch_vsin.py nfl --calibrate    # dumps live HTML, reports table shapes
+python scripts/fetch_schedule.py nfl              # should print the slate in kickoff order
+python scripts/fetch_vsin.py nfl --calibrate      # dumps live HTML, reports table shapes
+python scripts/fetch_action.py nfl --calibrate
+python scripts/fetch_consensus.py nfl --calibrate
 ```
 
 `--calibrate` writes the real page to `data/cache/calibrate/` and prints every
-table header it found. Fix `parse_book()` against that, then re-run without the
-flag. Until it returns rows, VSiN reports FAILED and every game stays UNVERIFIED
-— which is the intended behaviour, not a bug.
+table header it found, plus a warning if the page has no tables at all (which
+means the grid is JS-rendered and needs Playwright). Fix the parse against that,
+then re-run without the flag. Until a source returns rows it reports FAILED and
+its games stay UNVERIFIED — intended behaviour, not a bug.
+
+## Logging and grading plays
+
+```bash
+python scripts/paste.py --account @DaveMasonBOL --book BetOnline \
+    --game nfl-20260913-DAL-PHI --posted 2026-09-13T14:02:00Z < note.txt
+python scripts/grade.py log --game nfl-20260913-DAL-PHI --side DAL --market spread \
+    --number -3 --price -110 --book DraftKings --units 2 \
+    --signal "BOOK NEED" --why "74/72 DK, line static"
+python scripts/grade.py close  --play 1 --number -3.5 --price -125
+python scripts/grade.py result --play 1 --outcome win
+python scripts/grade.py report --since 2026-09-01
+```
+
+`report` gives record, units, ROI and average CLV, then names what the losing
+plays had in common — and separates losses with negative CLV (bad price) from
+losses with positive CLV (right side of the number, wrong result).
 
 ## Rules the code enforces, not just documents
 

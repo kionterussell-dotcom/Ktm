@@ -27,12 +27,12 @@ SOURCES: list[Source] = [
            "UNCALIBRATED — run `fetch_vsin.py <sport> --calibrate` on a networked machine first."),
     Source("weather", "fetch_context", "context", True, True,
            "Open-Meteo. Wind >=15mph flagged; domes skipped."),
-    Source("action", None, "splits", False, False,
-           "Action Network free-tier public betting. Not built: needs live HTML to write the parse. "
-           "PRO fields are gated and stay gated — paste them via /paste."),
-    Source("consensus", None, "splits", False, False,
-           "ScoresAndOdds / Covers / SportsBettingDime aggregates. Cross-verification only, never "
-           "reported as a per-book split."),
+    Source("action", "fetch_action", "splits", True, False,
+           "Action Network free-tier public betting. UNCALIBRATED. PRO fields are gated and stay "
+           "gated — paste them via /paste."),
+    Source("consensus", "fetch_consensus", "splits", True, False,
+           "ScoresAndOdds / Covers / SportsBettingDime aggregates. UNCALIBRATED. Cross-verification "
+           "only, never reported as a per-book split."),
     Source("lines", None, "lines", False, False,
            "Current numbers, openers and line history across books, with BetOnline as the "
            "origination reference for direction of travel."),

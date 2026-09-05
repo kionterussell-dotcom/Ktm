@@ -56,3 +56,50 @@ def header_kind(cells: list[str]) -> dict[str, int]:
         elif any(k in c for k in ("ticket", "bets", "bet %", "count")):
             idx.setdefault("tickets", i)
     return idx
+
+
+def scrape_splits_tables(html: str, source: str, book: str, sport: str,
+                         fetched_at: str, market_hint: str = "spread") -> list[dict]:
+    """Generic splits-table scraper shared by the consensus-style sources.
+
+    Action Network, Covers, ScoresAndOdds and SportsBettingDime all present the
+    same shape: a table whose header names bets/handle, and rows whose first cell
+    is a matchup. Matching that shape rather than each site's class names means
+    one parser instead of four, and a reskin at one site does not silently
+    produce zero rows — the caller's assert_parsed() raises instead.
+
+    UNCALIBRATED: written without a live response to check against.
+    """
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(html, "lxml")
+    rows: list[dict] = []
+    for tbl in soup.find_all("table"):
+        trs = tbl.find_all("tr")
+        if len(trs) < 2:
+            continue
+        head = [c.get_text(" ", strip=True) for c in trs[0].find_all(["td", "th"])]
+        idx = header_kind(head)
+        if not idx:
+            continue
+        for tr in trs[1:]:
+            cells = [c.get_text(" ", strip=True) for c in tr.find_all(["td", "th"])]
+            if len(cells) < 2:
+                continue
+            m = cells[0]
+            sep = "@" if "@" in m else (" at " if " at " in m.lower() else None)
+            if not sep:
+                continue
+            away, home = [x.strip() for x in m.split(sep, 1)[:2]]
+            t = pct(cells[idx["tickets"]]) if idx.get("tickets", 99) < len(cells) else None
+            h = pct(cells[idx["handle"]]) if idx.get("handle", 99) < len(cells) else None
+            if t is None and h is None:
+                continue
+            rows.append({
+                "fetched_at": fetched_at, "source": source, "book": book, "sport": sport,
+                "game_id": f"UNRESOLVED:{away}@{home}", "away": away, "home": home,
+                "market": market_hint, "side": away,
+                "ticket_pct": t, "handle_pct": h,
+                "raw_json": {"cells": cells, "source": source},
+            })
+    return rows

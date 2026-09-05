@@ -90,11 +90,27 @@ function statusStrip(st){
 }
 
 function picks(p){
+  const bets = p.bets.map(b => `<div class="pick">
+      <div class="g">${esc(b.away)} @ ${esc(b.home)}
+        <span class="tier ${b.bet_worthy ? '' : 'no'}">${esc(b.tier)}</span></div>
+      <div class="line num">${esc(b.side)} ${b.number ?? ''} ${b.price} · edge ${b.edge > 0 ? '+' : ''}${b.edge}
+        · breakeven ${b.breakeven}%</div>
+      <div class="thr num">take at ${b.threshold} or better${b.bet_worthy ? ` · ${b.units}u` : ''}</div>
+      ${b.bet_worthy ? '' : `<div class="rej">${esc(b.why_not)}</div>`}
+    </div>`).join('');
+
+  const flags = p.flags.map(f => `<div class="pick">
+      <div class="g">${esc(f.away)} @ ${esc(f.home)}</div>
+      <div class="s">${esc(f.signal.label)} · ${esc(f.signal.market)}</div>
+    </div>`).join('');
+
   $('bets').innerHTML =
-    (p.bets.length ? p.bets.map(b => `<div class="pick">
-        <div class="g">${esc(b.away)} @ ${esc(b.home)}</div>
-        <div class="s">${esc(b.signal.label)}</div></div>`).join('') : '') +
-    `<div class="blocked"><b>NOT RANKED YET</b>${esc(p.bets_blocked)}</div>`;
+    (p.summary ? `<div class="hdr num">${esc(p.summary.headline)}${
+      p.summary.exposure_units ? ` · ${p.summary.exposure_units}u exposure` : ''}</div>` : '') +
+    bets +
+    (p.bets_blocked ? `<div class="blocked"><b>NOT RANKED</b>${esc(p.bets_blocked)}</div>` : '') +
+    flags;
+
   $('props').innerHTML = `<div class="blocked"><b>NOT BUILT</b>${esc(p.props_blocked)}
     <br><br>Odds floor when live: ${p.odds_floor} or better.</div>`;
 }
